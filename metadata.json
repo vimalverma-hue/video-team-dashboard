@@ -1,0 +1,6 @@
+{
+  "name": "StreamLine - Video Workflow Dashboard",
+  "description": "Professional video workflow management dashboard with real-time Google Sheets integration, advanced filtering, and interactive analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Data Visualization", "Google Sheets Integration", "Real-time Monitoring"]
+}
