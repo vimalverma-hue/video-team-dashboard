@@ -13,11 +13,23 @@ interface ChartsSectionProps {
 export default function ChartsSection({ data }: ChartsSectionProps) {
   // Aggregate data for Status distribution
   const statusCounts = data.reduce((acc, curr) => {
+    // Filter out durations that might have leaked as status
+    if (/^\d+:\d+/.test(curr.status)) return acc;
+    
     acc[curr.status] = (acc[curr.status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const pieData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+  // Filter pie data to only main statuses + top others to prevent legend overflow
+  const mainStatuses = ['Completed', 'Working on it', 'Video rejected', 'Hold by owner'];
+  const pieData = Object.entries(statusCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+  
+  const topPieData = pieData.filter(d => 
+    mainStatuses.includes(d.name) || 
+    (d.value > data.length * 0.03 && !/^\d+:\d+/.test(d.name))
+  ).slice(0, 8);
 
   // Aggregate data for Editors performance
   const editorCounts = data.reduce((acc, curr) => {
@@ -30,28 +42,52 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
-  // Aggregate daily trend
+  // Aggregate daily/weekly trend
   const dailyCounts = data.reduce((acc, curr) => {
-    // Extract date from timestamp (assuming it's a date string like "Date(2023,10,24)")
-    // or standard ISO. The Visualization API often returns "Date(Y, M, D)"
     let dateStr = 'Unknown';
-    if (typeof curr.timestamp === 'string' && curr.timestamp.includes('Date')) {
-      const parts = curr.timestamp.match(/\d+/g);
-      if (parts) dateStr = `${parts[1]}/${parts[2]}`; // Month/Day
-    } else {
-      dateStr = new Date(curr.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    try {
+      const date = new Date(curr.timestamp);
+      if (!isNaN(date.getTime())) {
+        // Use a more predictable date string for sorting
+        dateStr = date.toISOString().split('T')[0];
+      }
+    } catch (e) {
+      dateStr = 'Unknown';
     }
     acc[dateStr] = (acc[dateStr] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const lineData = Object.entries(dailyCounts).map(([date, count]) => ({ date, count }));
+  let trendData = Object.entries(dailyCounts)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+    
+  // If too many points, aggregate by week for smoother visualization
+  if (trendData.length > 60) {
+    const weeklyData: Record<string, number> = {};
+    trendData.forEach(d => {
+       const date = new Date(d.date);
+       const week = `${date.getFullYear()}-W${Math.ceil(date.getDate() / 7)}`;
+       weeklyData[week] = (weeklyData[week] || 0) + d.count;
+    });
+    trendData = Object.entries(weeklyData).map(([date, count]) => ({ 
+      date: date.replace('-W', ' Week '), 
+      count 
+    })).slice(-26); // show last 6 months Approx
+  } else {
+    // Format dates for display
+    trendData = trendData.map(d => ({
+      ...d,
+      date: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    }));
+  }
 
   const COLORS = {
-    Completed: '#00ff9f',
-    Pending: '#ffd93b',
-    Urgent: '#ff3b3b',
-    Other: '#3b82f6'
+    'Completed': '#00ff9f',
+    'Working on it': '#ffd93b',
+    'Video rejected': '#ff3b3b',
+    'Hold by owner': '#3b82f6',
+    'Other': '#71717a'
   };
 
   return (
@@ -63,12 +99,12 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         className="bg-[#151515]/60 backdrop-blur-lg border border-white/5 p-4 rounded-2xl shadow-xl"
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">Weekly Upload Trend</h3>
-          <span className="text-[10px] text-brand-green font-bold">+12% vs last week</span>
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">Productivity Trend</h3>
+          <span className="text-[10px] text-brand-green font-bold">Trend Analysis</span>
         </div>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lineData}>
+            <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
               <XAxis dataKey="date" stroke="#444" fontSize={10} tickLine={false} axisLine={false} />
               <YAxis stroke="#444" fontSize={10} tickLine={false} axisLine={false} />
@@ -76,7 +112,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
                 contentStyle={{ backgroundColor: '#151515', border: '1px solid #333', borderRadius: '12px' }}
                 itemStyle={{ color: '#fff', fontSize: '11px' }}
               />
-              <Line type="monotone" dataKey="count" stroke="#ff3b3b" strokeWidth={3} dot={{ fill: '#ff3b3b', r: 4 }} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="count" stroke="#ff3b3b" strokeWidth={2} dot={trendData.length < 30} activeDot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -94,7 +130,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={pieData}
+                  data={topPieData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -103,7 +139,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
                   dataKey="value"
                   stroke="none"
                 >
-                  {pieData.map((entry, index) => (
+                  {topPieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={(COLORS as any)[entry.name] || COLORS.Other} />
                   ))}
                 </Pie>
@@ -114,13 +150,16 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex flex-col gap-3 pr-4">
-             {pieData.map((entry, idx) => (
-               <div key={idx} className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: (COLORS as any)[entry.name] || COLORS.Other }} />
-                 <span className="text-[10px] text-gray-500 font-bold uppercase">{entry.name}</span>
+          <div className="flex flex-col gap-2 pr-4 overflow-y-auto max-h-[220px]">
+             {topPieData.map((entry, idx) => (
+               <div key={idx} className="flex items-center gap-2 max-w-[150px]">
+                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: (COLORS as any)[entry.name] || COLORS.Other }} />
+                 <span className="text-[10px] text-gray-500 font-bold uppercase truncate">{entry.name}</span>
                </div>
              ))}
+             {pieData.length > topPieData.length && (
+               <span className="text-[9px] text-gray-700 italic">+{pieData.length - topPieData.length} more...</span>
+             )}
           </div>
         </div>
       </motion.div>

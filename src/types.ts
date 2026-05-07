@@ -1,7 +1,8 @@
 export enum VideoStatus {
+  WORKING_ON_IT = 'Working on it',
   COMPLETED = 'Completed',
-  PENDING = 'Pending',
-  URGENT = 'Urgent',
+  VIDEO_REJECTED = 'Video rejected',
+  HOLD_BY_OWNER = 'Hold by owner',
 }
 
 export interface VideoEntry {
@@ -12,14 +13,15 @@ export interface VideoEntry {
   category: string;
   type: string;
   editors: string;
-  status: VideoStatus | string;
+  status: string;
 }
 
 export interface DashboardStats {
   totalVideos: number;
   completedCount: number;
-  pendingCount: number;
-  urgentCount: number;
+  workingCount: number;
+  rejectedCount: number;
+  onHoldCount: number;
   editorsCount: number;
   channelsCount: number;
 }

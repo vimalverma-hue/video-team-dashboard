@@ -38,7 +38,11 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const result = await fetchSheetData();
-      setData(result);
+      // Sort data descending by timestamp (newest first)
+      const sortedData = [...result].sort((a, b) => {
+        return b.timestamp.toString().localeCompare(a.timestamp.toString());
+      });
+      setData(sortedData);
       setLastUpdated(new Date());
       setError(null);
     } catch (err: any) {
@@ -53,11 +57,11 @@ export default function Dashboard() {
   }, []);
 
   const uniqueOptions = useMemo(() => {
-    const editors = Array.from(new Set(data.map(d => d.editors))).filter(Boolean);
-    const channels = Array.from(new Set(data.map(d => d.channel))).filter(Boolean);
-    const statuses = Array.from(new Set(data.map(d => d.status))).filter(Boolean);
-    const categories = Array.from(new Set(data.map(d => d.category))).filter(Boolean);
-    const types = Array.from(new Set(data.map(d => d.type))).filter(Boolean);
+    const editors = Array.from(new Set(data.map(d => d.editors.trim()))).filter(Boolean).sort();
+    const channels = Array.from(new Set(data.map(d => d.channel.trim()))).filter(Boolean).sort();
+    const statuses = Array.from(new Set(data.map(d => d.status.trim()))).filter(Boolean).sort();
+    const categories = Array.from(new Set(data.map(d => d.category.trim()))).filter(Boolean).sort();
+    const types = Array.from(new Set(data.map(d => d.type.trim()))).filter(Boolean).sort();
     
     return { editors, channels, statuses, categories, types };
   }, [data]);
@@ -81,11 +85,11 @@ export default function Dashboard() {
       if (filters.timeRange === 'Today') {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
         matchesTime = entry.timestamp.toString().includes(todayStr);
-      } else if (filters.timeRange === 'Tomorrow') {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
-        matchesTime = entry.timestamp.toString().includes(tomorrowStr);
+      } else if (filters.timeRange === 'Yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        matchesTime = entry.timestamp.toString().includes(yesterdayStr);
       }
 
       return matchesSearch && matchesEditor && matchesChannel && matchesStatus && matchesCategory && matchesType && matchesTime;
@@ -93,15 +97,30 @@ export default function Dashboard() {
   }, [data, searchQuery, filters]);
 
   const stats = useMemo<DashboardStats>(() => {
+    // Optimization: avoid filtering the whole array multiple times for each stat
+    let completed = 0;
+    let working = 0;
+    let rejected = 0;
+    let hold = 0;
+
+    for (let i = 0; i < filteredData.length; i++) {
+       const s = filteredData[i].status.toLowerCase();
+       if (s.includes('completed')) completed++;
+       else if (s.includes('working') || s.includes('progress')) working++;
+       else if (s.includes('rejected')) rejected++;
+       else if (s.includes('hold')) hold++;
+    }
+
     return {
-      totalVideos: filteredData.length,
-      completedCount: filteredData.filter(d => d.status.toLowerCase() === 'completed').length,
-      pendingCount: filteredData.filter(d => d.status.toLowerCase() === 'pending').length,
-      urgentCount: filteredData.filter(d => d.status.toLowerCase() === 'urgent').length,
+      totalVideos: data.length, // Always show the full dataset size as requested
+      completedCount: completed,
+      workingCount: working,
+      rejectedCount: rejected,
+      onHoldCount: hold,
       editorsCount: new Set(filteredData.map(d => d.editors)).size,
       channelsCount: new Set(filteredData.map(d => d.channel)).size,
     };
-  }, [filteredData]);
+  }, [data.length, filteredData]);
 
   const exportToCSV = () => {
     const headers = ['Timestamp', 'Email', 'Channel', 'Subject', 'Category', 'Type', 'Editors', 'Status'];
@@ -257,7 +276,7 @@ export default function Dashboard() {
             >
               <option value="All">All Time</option>
               <option value="Today">Today</option>
-              <option value="Tomorrow">Tomorrow</option>
+              <option value="Yesterday">Yesterday</option>
             </select>
           </div>
 
@@ -306,27 +325,57 @@ export default function Dashboard() {
         <ChartsSection data={filteredData} />
 
         <section className="min-h-0 flex-grow pb-12">
-          <AnimatePresence mode="wait">
-            {viewMode === 'table' ? (
-              <motion.div
-                key="table"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <DataTable entries={filteredData} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="cards"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <CardView entries={filteredData} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {filteredData.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-gray-700 bg-white/5 rounded-2xl border border-white/5 border-dashed"
+            >
+               <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                  <Search size={24} />
+               </div>
+               <p className="text-sm font-bold uppercase tracking-widest text-gray-400">No matching results found</p>
+               <p className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Try adjusting your search or filters</p>
+               <button 
+                 onClick={() => {
+                   setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All' });
+                   setSearchQuery('');
+                 }}
+                 className="mt-6 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-brand-red text-[10px] font-black uppercase transition-all tracking-widest"
+               >
+                 RESET ALL FILTERS
+               </button>
+            </motion.div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                   Recent {Math.min(filteredData.length, 100)} Entries out of {filteredData.length}
+                 </h4>
+              </div>
+              <AnimatePresence mode="wait">
+                {viewMode === 'table' ? (
+                  <motion.div
+                    key="table"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <DataTable entries={filteredData.slice(0, 100)} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="cards"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <CardView entries={filteredData.slice(0, 100)} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </section>
       </main>
 

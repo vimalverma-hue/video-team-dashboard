@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { format } from 'date-fns';
 import { VideoEntry } from '../types';
 import { cn } from '../lib/utils';
 import { User, Tv, Tag, Calendar } from 'lucide-react';
@@ -44,13 +45,14 @@ export default function CardView({ entries }: CardViewProps) {
               <span className={cn(
                 "px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border",
                 entry.status.toLowerCase() === 'completed' ? "bg-green-900/30 text-brand-green border-green-500/20" :
-                entry.status.toLowerCase() === 'urgent' ? "bg-red-900/30 text-brand-red border-red-500/20" :
-                "bg-yellow-900/30 text-brand-yellow border-yellow-500/20"
+                entry.status.toLowerCase() === 'working on it' ? "bg-yellow-900/30 text-brand-yellow border-yellow-500/20" :
+                entry.status.toLowerCase() === 'video rejected' ? "bg-red-900/30 text-brand-red border-red-500/20" :
+                "bg-blue-900/30 text-blue-400 border-blue-500/20"
               )}>
                 {entry.status}
               </span>
               <span className="text-[9px] text-gray-600 font-mono">
-                {entry.timestamp.toString().slice(-8)}
+                {entry.timestamp.includes('T') ? format(new Date(entry.timestamp), 'HH:mm:ss') : entry.timestamp.toString().slice(-8)}
               </span>
             </div>
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Video, CheckCircle2, AlertCircle, Clock, Users, Tv } from 'lucide-react';
+import { Video, CheckCircle2, XCircle, Pause, Layout, Users, Tv } from 'lucide-react';
 import { DashboardStats } from '../types';
 import { cn } from '../lib/utils';
 
@@ -12,9 +12,9 @@ export default function StatsGrid({ stats }: StatsGridProps) {
   const cards = [
     { label: 'Total Videos', value: stats.totalVideos, icon: Video, color: 'text-white' },
     { label: 'Completed', value: stats.completedCount, icon: CheckCircle2, color: 'text-[#00ff9f]' },
-    { label: 'Pending', value: stats.pendingCount, icon: Clock, color: 'text-[#ffd93b]' },
-    { label: 'Urgent', value: stats.urgentCount, icon: AlertCircle, color: 'text-[#ff3b3b]' },
-    { label: 'Editors', value: stats.editorsCount, icon: Users, color: 'text-blue-400' },
+    { label: 'In Progress', value: stats.workingCount, icon: Layout, color: 'text-[#ffd93b]' },
+    { label: 'Rejected', value: stats.rejectedCount, icon: XCircle, color: 'text-[#ff3b3b]' },
+    { label: 'On Hold', value: stats.onHoldCount, icon: Pause, color: 'text-blue-400' },
     { label: 'Channels', value: stats.channelsCount, icon: Tv, color: 'text-purple-400' },
   ];
 

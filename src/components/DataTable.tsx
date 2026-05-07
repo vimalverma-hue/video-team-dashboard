@@ -12,8 +12,9 @@ export default function DataTable({ entries }: DataTableProps) {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed': return 'bg-[#00ff9f]/10 text-[#00ff9f] border-[#00ff9f]/20';
-      case 'pending': return 'bg-[#ffd93b]/10 text-[#ffd93b] border-[#ffd93b]/20';
-      case 'urgent': return 'bg-[#ff3b3b]/10 text-[#ff3b3b] border-[#ff3b3b]/20';
+      case 'working on it': return 'bg-[#ffd93b]/10 text-[#ffd93b] border-[#ffd93b]/20';
+      case 'video rejected': return 'bg-[#ff3b3b]/10 text-[#ff3b3b] border-[#ff3b3b]/20';
+      case 'hold by owner': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       default: return 'bg-zinc-800 text-zinc-400 border-zinc-700';
     }
   };
@@ -41,7 +42,11 @@ export default function DataTable({ entries }: DataTableProps) {
               className="hover:bg-white/5 transition-colors group"
             >
               <td className="px-4 py-3 text-gray-500 font-mono text-[10px]">
-                {entry.timestamp.toString()}
+                {entry.timestamp.includes('T') && entry.timestamp.includes('Z') 
+                  ? new Date(entry.timestamp).toLocaleString(undefined, { 
+                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                    })
+                  : entry.timestamp.toString()}
               </td>
               <td className="px-4 py-3">
                 <span className="text-white font-semibold">{entry.channel}</span>
