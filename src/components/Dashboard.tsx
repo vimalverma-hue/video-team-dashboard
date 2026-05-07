@@ -120,7 +120,7 @@ export default function Dashboard() {
       editorsCount: new Set(filteredData.map(d => d.editors)).size,
       channelsCount: new Set(filteredData.map(d => d.channel)).size,
     };
-  }, [data.length, filteredData]);
+  }, [filteredData]);
 
   const exportToCSV = () => {
     const headers = ['Timestamp', 'Email', 'Channel', 'Subject', 'Category', 'Type', 'Editors', 'Status'];
