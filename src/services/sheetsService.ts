@@ -1,17 +1,28 @@
 import Papa from 'papaparse';
 import { VideoEntry } from '../types';
 
-const SHEET_ID = '1Uw9-lgbdNXVzPRAYmapMJH2XXEd58rSIA78DTLjFcFU';
-const GID = '101564942';
+const SHEETS_CONFIG = {
+  NATIONALS: {
+    ID: '1Uw9-lgbdNXVzPRAYmapMJH2XXEd58rSIA78DTLjFcFU',
+    GID: '101564942',
+  },
+  VERNAC: {
+    ID: '1BjBaNxRAOWhNz1okh6fAibFESkBfnDkCd-EPIGxYeSI', 
+    GID: '978833306', 
+  }
+};
+
+export type SheetSource = 'NATIONALS' | 'VERNAC';
 
 /**
  * Fetches data from Google Sheets using the CSV export URL.
  * CSV export is generally faster and ignores spreadsheet-level UI filters/hidden rows.
  */
-export async function fetchSheetData(): Promise<VideoEntry[]> {
+export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise<VideoEntry[]> {
   try {
+    const config = SHEETS_CONFIG[source];
     // Reverting to /export?format=csv which is the most reliable way to get ALL data (ignoring UI filters/hidden rows)
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}&tq_cb=${Date.now()}`;
+    const url = `https://docs.google.com/spreadsheets/d/${config.ID}/export?format=csv&gid=${config.GID}&tq_cb=${Date.now()}`;
     const response = await fetch(url);
     if (!response.ok) {
       if (response.status === 404) throw new Error('Sheet not found. Please check your SHEET_ID and GID.');

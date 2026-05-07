@@ -4,20 +4,21 @@ import {
   Search, Filter, RefreshCw, Download, LayoutGrid, List, 
   Moon, Sun, Calendar as CalendarIcon, ChevronDown, X
 } from 'lucide-react';
-import { fetchSheetData } from '../services/sheetsService';
+import { fetchSheetData, SheetSource } from '../services/sheetsService';
 import { VideoEntry, DashboardStats } from '../types';
 import StatsGrid from './StatsGrid';
 import ChartsSection from './ChartsSection';
 import DataTable from './DataTable';
 import CardView from './CardView';
 import { cn } from '../lib/utils';
-import { format, isToday, isTomorrow, parseISO, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function Dashboard() {
   const [data, setData] = useState<VideoEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeSource, setActiveSource] = useState<SheetSource>('NATIONALS');
   
   // Filtering & Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,10 +35,10 @@ export default function Dashboard() {
     timeRange: 'All' // All, Today, Tomorrow, Custom
   });
 
-  const loadData = async () => {
+  const loadData = async (source: SheetSource = activeSource) => {
     setLoading(true);
     try {
-      const result = await fetchSheetData();
+      const result = await fetchSheetData(source);
       // Sort data descending by timestamp (newest first)
       const sortedData = [...result].sort((a, b) => {
         return b.timestamp.toString().localeCompare(a.timestamp.toString());
@@ -47,14 +48,30 @@ export default function Dashboard() {
       setError(null);
     } catch (err: any) {
       setError(err.message);
+      setData([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(activeSource);
+  }, [activeSource]);
+
+  const handleSourceChange = (source: SheetSource) => {
+    if (source !== activeSource) {
+      setActiveSource(source);
+      // Reset filters when switching sources as options might change
+      setFilters({
+        editor: 'All',
+        channel: 'All',
+        status: 'All',
+        category: 'All',
+        type: 'All',
+        timeRange: 'All'
+      });
+    }
+  };
 
   const uniqueOptions = useMemo(() => {
     const editors = Array.from(new Set(data.map(d => d.editors.trim()))).filter(Boolean).sort();
@@ -217,6 +234,46 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-[1400px] mx-auto p-4 flex flex-col gap-4">
+        {/* Source Tab Switcher */}
+        <div className="flex items-center justify-center -mt-2">
+          <div className="bg-[#151515] p-1 rounded-xl border border-white/5 flex gap-1 shadow-2xl">
+            <button
+              onClick={() => handleSourceChange('NATIONALS')}
+              className={cn(
+                "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
+                activeSource === 'NATIONALS' 
+                  ? "bg-brand-red text-white shadow-lg shadow-red-900/40" 
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+              )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'NATIONALS' ? "bg-white animate-pulse" : "bg-gray-700")} />
+              NATIONALS
+            </button>
+            <button
+              onClick={() => handleSourceChange('VERNAC')}
+              className={cn(
+                "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
+                activeSource === 'VERNAC' 
+                  ? "bg-brand-red text-white shadow-lg shadow-red-900/40" 
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+              )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'VERNAC' ? "bg-white animate-pulse" : "bg-gray-700")} />
+              VERNAC
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-brand-red/10 border border-brand-red/20 text-brand-red px-4 py-3 rounded-xl text-xs font-bold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <X size={16} />
+              <span>{error}</span>
+            </div>
+            <button onClick={() => loadData(activeSource)} className="underline uppercase tracking-widest">Retry</button>
+          </div>
+        )}
+
         {/* Filter Bar */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-[#151515]/40 p-3 rounded-xl border border-white/5 backdrop-blur-md">
           <div className="flex flex-col gap-1">
