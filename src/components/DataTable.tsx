@@ -28,7 +28,7 @@ export default function DataTable({ entries }: DataTableProps) {
             <th className="px-4 py-3">Channel</th>
             <th className="px-4 py-3">Subject</th>
             <th className="px-4 py-3">Category</th>
-            <th className="px-4 py-3">Editor</th>
+            <th className="px-4 py-3">Editors</th>
             <th className="px-4 py-3">Status</th>
           </tr>
         </thead>

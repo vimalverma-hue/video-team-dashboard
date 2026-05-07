@@ -112,7 +112,7 @@ export default function Dashboard() {
     }
 
     return {
-      totalVideos: data.length, // Always show the full dataset size as requested
+      totalVideos: filteredData.length,
       completedCount: completed,
       workingCount: working,
       rejectedCount: rejected,
@@ -170,7 +170,7 @@ export default function Dashboard() {
             <LayoutGrid className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">StudioStream <span className="text-brand-red font-light italic">Analytics</span></h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">Post Production <span className="text-brand-red font-light italic">Analytics</span></h1>
             <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Video Workflow Dashboard</p>
           </div>
         </div>
@@ -220,13 +220,13 @@ export default function Dashboard() {
         {/* Filter Bar */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 bg-[#151515]/40 p-3 rounded-xl border border-white/5 backdrop-blur-md">
           <div className="flex flex-col gap-1">
-             <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">Designer</label>
+             <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">Editors</label>
              <select 
               value={filters.editor}
               onChange={(e) => setFilters(f => ({ ...f, editor: e.target.value }))}
               className="input-field"
             >
-              <option value="All">All Designers</option>
+              <option value="All">All Editors</option>
               {uniqueOptions.editors.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
           </div>

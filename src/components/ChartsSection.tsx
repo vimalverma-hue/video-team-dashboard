@@ -11,25 +11,23 @@ interface ChartsSectionProps {
 }
 
 export default function ChartsSection({ data }: ChartsSectionProps) {
-  // Aggregate data for Status distribution
-  const statusCounts = data.reduce((acc, curr) => {
-    // Filter out durations that might have leaked as status
-    if (/^\d+:\d+/.test(curr.status)) return acc;
-    
-    acc[curr.status] = (acc[curr.status] || 0) + 1;
+  // Aggregate data for Channel distribution
+  const channelCounts = data.reduce((acc, curr) => {
+    const channel = (curr.channel || 'Unknown').trim();
+    acc[channel] = (acc[channel] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  // Filter pie data to only main statuses + top others to prevent legend overflow
-  const mainStatuses = ['Completed', 'Working on it', 'Video rejected', 'Hold by owner'];
-  const pieData = Object.entries(statusCounts)
+  const channelData = Object.entries(channelCounts)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
   
-  const topPieData = pieData.filter(d => 
-    mainStatuses.includes(d.name) || 
-    (d.value > data.length * 0.03 && !/^\d+:\d+/.test(d.name))
-  ).slice(0, 8);
+  const topChannelData = channelData.slice(0, 10);
+  const otherChannelsValue = channelData.slice(10).reduce((sum, d) => sum + d.value, 0);
+  
+  if (otherChannelsValue > 0) {
+    topChannelData.push({ name: 'Others', value: otherChannelsValue });
+  }
 
   // Aggregate data for Editors performance
   const editorCounts = data.reduce((acc, curr) => {
@@ -82,13 +80,11 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
     }));
   }
 
-  const COLORS = {
-    'Completed': '#00ff9f',
-    'Working on it': '#ffd93b',
-    'Video rejected': '#ff3b3b',
-    'Hold by owner': '#3b82f6',
-    'Other': '#71717a'
-  };
+  const CHART_COLORS = [
+    '#00ff9f', '#3b82f6', '#ff3b3b', '#ffd93b', 
+    '#a855f7', '#ec4899', '#06b6d4', '#f97316', 
+    '#8b5cf6', '#10b981', '#71717a'
+  ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -118,19 +114,19 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         </div>
       </motion.div>
 
-      {/* Status Distribution */}
+      {/* Channel Distribution */}
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         className="bg-[#151515]/60 backdrop-blur-lg border border-white/5 p-4 rounded-2xl shadow-xl"
       >
-        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Status Distribution</h3>
+        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Channel Distribution</h3>
         <div className="h-[250px] w-full flex items-center justify-between">
           <div className="flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={topPieData}
+                  data={topChannelData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -139,8 +135,8 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
                   dataKey="value"
                   stroke="none"
                 >
-                  {topPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={(COLORS as any)[entry.name] || COLORS.Other} />
+                  {topChannelData.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -151,14 +147,14 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
             </ResponsiveContainer>
           </div>
           <div className="flex flex-col gap-2 pr-4 overflow-y-auto max-h-[220px]">
-             {topPieData.map((entry, idx) => (
+             {topChannelData.map((entry, idx) => (
                <div key={idx} className="flex items-center gap-2 max-w-[150px]">
-                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: (COLORS as any)[entry.name] || COLORS.Other }} />
+                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }} />
                  <span className="text-[10px] text-gray-500 font-bold uppercase truncate">{entry.name}</span>
                </div>
              ))}
-             {pieData.length > topPieData.length && (
-               <span className="text-[9px] text-gray-700 italic">+{pieData.length - topPieData.length} more...</span>
+             {channelData.length > topChannelData.length && (
+               <span className="text-[9px] text-gray-700 italic">+{channelData.length - topChannelData.length} more...</span>
              )}
           </div>
         </div>
