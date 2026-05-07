@@ -62,18 +62,20 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   }, [data]);
 
-  // Aggregate data for Editors performance
-  const editorData = useMemo(() => {
+  // Aggregate data for Categories performance (Completed only)
+  const categoryData = useMemo(() => {
     const counts = data.reduce((acc, curr) => {
-      const editor = (curr.editors || 'Unknown').trim() || 'Unknown';
-      acc[editor] = (acc[editor] || 0) + 1;
+      // We only count completed ones for this specific grid
+      if (curr.status.toLowerCase() !== 'completed') return acc;
+      
+      const cat = (curr.category || 'Others').trim() || 'Others';
+      acc[cat] = (acc[cat] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     return Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .sort((a, b) => b.value - a.value);
   }, [data]);
 
   const CHART_COLORS = [
@@ -152,34 +154,45 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         </div>
       </motion.div>
 
-      {/* Top Editors */}
+      {/* All Categories Grid */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="lg:col-span-2 bg-[#151515]/60 backdrop-blur-lg border border-white/5 p-4 rounded-2xl shadow-xl"
       >
-        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Top Editors Performance</h3>
-        <div className="h-[200px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={editorData} layout="vertical" margin={{ left: 40 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#222" horizontal={true} vertical={false} />
-              <XAxis type="number" hide />
-              <YAxis 
-                type="category" 
-                dataKey="name" 
-                stroke="#666" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                width={80}
-              />
-              <Tooltip 
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{ backgroundColor: '#151515', border: '1px solid #333', borderRadius: '12px' }}
-              />
-              <Bar dataKey="value" fill="#ff3b3b" radius={[0, 4, 4, 0]} barSize={16} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">All Categories</h3>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase font-medium">Completed video counts by type</p>
+          </div>
+          <div className="bg-brand-red/10 px-2 py-1 rounded border border-brand-red/20">
+            <span className="text-[10px] text-brand-red font-bold uppercase">Work Distribution</span>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {categoryData.length > 0 ? categoryData.map((item, idx) => (
+            <motion.div
+              key={idx}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.03)' }}
+              className="bg-white/5 border border-white/5 p-3 rounded-xl flex flex-col justify-between group transition-all"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight truncate pr-2" title={item.name}>
+                  {item.name}
+                </span>
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-red group-hover:shadow-[0_0_8px_rgba(255,59,59,0.8)]" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-white tracking-tighter">{item.value.toLocaleString()}</span>
+                <span className="text-[9px] text-brand-green font-bold uppercase">Videos</span>
+              </div>
+            </motion.div>
+          )) : (
+            <div className="col-span-full py-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">
+              <span className="text-xs text-gray-500">No completed data found</span>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
