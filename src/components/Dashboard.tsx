@@ -218,7 +218,7 @@ export default function Dashboard() {
             {isDarkMode ? <Sun size={18} className="text-brand-yellow" /> : <Moon size={18} className="text-slate-600" />}
           </button>
           <button 
-            onClick={loadData}
+            onClick={() => loadData()}
             className="p-2 rounded-lg bg-[#202020] hover:bg-[#252525] border border-white border-opacity-5 text-gray-400 transition-colors"
             title="Refresh Data"
           >
