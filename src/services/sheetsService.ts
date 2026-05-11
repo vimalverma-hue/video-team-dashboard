@@ -9,24 +9,70 @@ const SHEETS_CONFIG = {
   VERNAC: {
     ID: '1BjBaNxRAOWhNz1okh6fAibFESkBfnDkCd-EPIGxYeSI', 
     GID: '978833306', 
+  },
+  CREATIVE_BRP: {
+    ID: '1sAqCpfAwahepv9-k1sfldpc_wvj7_RtNcUIe8fEaDwg',
+    GID: '1816271126',
+  },
+  CREATIVE_SRA: {
+    ID: '1AgunXii-2VA-xCyctUCMZVNIeQKgmS6Y5HgyT93jg3Q',
+    GID: '1994272713',
+  },
+  CREATIVE_TUC: {
+    ID: '1W792-4qEQaqVgSFy9q27tQNPtgGGXySGGB-Cd9W6g5s',
+    GID: '1693166075',
+  },
+  CREATIVE_ENB: {
+    ID: '11l9ZzO384rcgSEvHlzwfVNZcJmMNOHKI-XLOUcbZvHY',
+    GID: '142686641',
+  },
+  CREATIVE_VERNAC: {
+    ID: '1eyYKuoj-WP_YmBDFOGjHimWiXgOajwmYMyYUyhoWEsE',
+    GID: '1703359617',
   }
 };
 
-export type SheetSource = 'NATIONALS' | 'VERNAC' | 'TESTPREP';
+export type SheetSource = 'NATIONALS' | 'VERNAC' | 'TESTPREP' | 'CREATIVE_BRP' | 'CREATIVE_SRA' | 'CREATIVE_TUC' | 'CREATIVE_ENB' | 'CREATIVE_VERNAC' | 'CREATIVE_TESTPREP';
+
+// Simple in-memory cache
+const DATA_CACHE: Record<string, { data: any[], timestamp: number }> = {};
+const CACHE_TTL = 300 * 1000; // 5 minutes
 
 /**
  * Fetches data from Google Sheets using the CSV export URL.
  * CSV export is generally faster and ignores spreadsheet-level UI filters/hidden rows.
  */
-export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise<VideoEntry[]> {
+export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise<any[]> {
+  const now = Date.now();
+  if (DATA_CACHE[source] && (now - DATA_CACHE[source].timestamp) < CACHE_TTL) {
+    return DATA_CACHE[source].data;
+  }
+
   if (source === 'TESTPREP') {
     const [nationals, vernac] = await Promise.all([
       fetchSheetData('NATIONALS'),
       fetchSheetData('VERNAC')
     ]);
-    return [...nationals, ...vernac].sort((a, b) => 
+    const merged = [...nationals, ...vernac].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+    DATA_CACHE[source] = { data: merged, timestamp: Date.now() };
+    return merged;
+  }
+
+  if (source === 'CREATIVE_TESTPREP') {
+    const [brp, sra, tuc, enb, vernac] = await Promise.all([
+      fetchSheetData('CREATIVE_BRP'),
+      fetchSheetData('CREATIVE_SRA'),
+      fetchSheetData('CREATIVE_TUC'),
+      fetchSheetData('CREATIVE_ENB'),
+      fetchSheetData('CREATIVE_VERNAC')
+    ]);
+    const merged = [...brp, ...sra, ...tuc, ...enb, ...vernac].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    DATA_CACHE[source] = { data: merged, timestamp: Date.now() };
+    return merged;
   }
 
   try {
@@ -73,6 +119,21 @@ export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise
         }
       }
 
+      // Detect if it's a creative production sheet based on source name or column presence
+      const isCreative = source.startsWith('CREATIVE_');
+
+      if (isCreative) {
+        return {
+          timestamp: (timestamp || '').toString(),
+          modeOfSession: (getVal(['Mode of Session'], 1) || '').toString(),
+          creativeType: (getVal(['Creative Type'], 2) || '').toString(),
+          mailSubjectLine: (getVal(['Mail Subject Line'], 3) || '').toString(),
+          creativesCount: (getVal(['Creatives count'], 6) || '').toString(),
+          designer: (getVal(['Designer'], 4) || '').toString(),
+          status: (getVal(['Status'], 7) || 'Pending').toString().trim(),
+        };
+      }
+
       // Robust Status Detection using prioritized columns
       let status = (getVal(['Status'], 8) || 'Pending').toString().trim();
       
@@ -96,9 +157,14 @@ export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise
     });
 
     // Final filter to ensure we have at least some data in the row
-    return mappedData.filter(d => 
-      d.timestamp || d.email || d.channel || d.subject
+    const finalData = mappedData.filter(d => 
+      d.timestamp && (d.email || d.channel || d.subject || d.designer || d.mailSubjectLine)
     );
+
+    // Cache the result
+    DATA_CACHE[source] = { data: finalData, timestamp: Date.now() };
+
+    return finalData;
   } catch (error) {
     console.error('Error fetching sheet data:', error);
     throw new Error('Failed to connect to Google Sheets. Please ensure the sheet is public.');

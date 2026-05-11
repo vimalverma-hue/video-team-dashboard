@@ -7,20 +7,25 @@ import { motion } from 'motion/react';
 import { VideoEntry } from '../types';
 
 interface ChartsSectionProps {
-  data: VideoEntry[];
+  data: any[];
+  isCreative?: boolean;
 }
 
-export default function ChartsSection({ data }: ChartsSectionProps) {
-  // Filter and prioritize top 8 channels, group others
+export default function ChartsSection({ data, isCreative = false }: ChartsSectionProps) {
+  // Filter and prioritize top 8 items, group others
   const pieData = useMemo(() => {
     const counts = data.reduce((acc, curr) => {
-      const channel = (curr.channel || 'Unknown').trim() || 'Unknown';
-      acc[channel] = (acc[channel] || 0) + 1;
+      const field = isCreative 
+        ? (curr.creativeType || 'Unknown') 
+        : (curr.channel || 'Unknown');
+      const label = field.trim() || 'Unknown';
+      const count = isCreative ? (parseInt(curr.creativesCount, 10) || 0) : 1;
+      acc[label] = (acc[label] || 0) + count;
       return acc;
     }, {} as Record<string, number>);
 
     let sorted = Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
 
     if (sorted.length > 8) {
@@ -29,7 +34,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
       return [...top8, { name: 'Others', value: othersValue }];
     }
     return sorted;
-  }, [data]);
+  }, [data, isCreative]);
 
   // Aggregate monthly trend
   const trendData = useMemo(() => {
@@ -38,13 +43,13 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
       try {
         const date = new Date(curr.timestamp);
         if (!isNaN(date.getTime())) {
-          // Key format: YYYY-MM for sorting
           monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         }
       } catch (e) {
         monthKey = 'Unknown';
       }
-      acc[monthKey] = (acc[monthKey] || 0) + 1;
+      const count = isCreative ? (parseInt(curr.creativesCount, 10) || 0) : 1;
+      acc[monthKey] = (acc[monthKey] || 0) + count;
       return acc;
     }, {} as Record<string, number>);
 
@@ -62,21 +67,26 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
       .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   }, [data]);
 
-  // Aggregate data for Categories performance (Completed only)
-  const categoryData = useMemo(() => {
+  // Aggregate data for Performers (Completed only)
+  const performerData = useMemo(() => {
     const counts = data.reduce((acc, curr) => {
-      // We only count completed ones for this specific grid
-      if (curr.status.toLowerCase() !== 'completed') return acc;
+      const status = (curr.status || '').toLowerCase();
+      if (!status.includes('completed') && !status.includes('done')) return acc;
       
-      const cat = (curr.category || 'Others').trim() || 'Others';
-      acc[cat] = (acc[cat] || 0) + 1;
+      const performer = isCreative 
+        ? (curr.designer || 'Others')
+        : (curr.category || 'Others');
+      
+      const label = performer.trim() || 'Others';
+      const count = isCreative ? (parseInt(curr.creativesCount, 10) || 0) : 1;
+      acc[label] = (acc[label] || 0) + count;
       return acc;
     }, {} as Record<string, number>);
 
     return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value]) => ({ name, value: value as number }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [data, isCreative]);
 
   const CHART_COLORS = [
     '#00ff9f', '#3b82f6', '#ff3b3b', '#ffd93b', 
@@ -86,7 +96,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-      {/* Daily Upload Trend */}
+      {/* Productivity Trend */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -113,13 +123,15 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         </div>
       </motion.div>
 
-      {/* Channel Distribution */}
+      {/* Distribution */}
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         className="bg-[#151515]/60 backdrop-blur-lg border border-white/5 p-4 rounded-2xl shadow-xl"
       >
-        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Channel distribution</h3>
+        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">
+          {isCreative ? 'Creative Type' : 'Channel'} Distribution
+        </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -154,7 +166,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         </div>
       </motion.div>
 
-      {/* All Categories Grid */}
+      {/* Performance Grid */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -162,8 +174,12 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
       >
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">All Categories</h3>
-            <p className="text-[10px] text-gray-500 mt-1 uppercase font-medium">Completed video counts by type</p>
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">
+              {isCreative ? 'Designer Portfolio' : 'All Categories'}
+            </h3>
+            <p className="text-[10px] text-gray-500 mt-1 uppercase font-medium">
+              Completed {isCreative ? 'creative' : 'video'} counts
+            </p>
           </div>
           <div className="bg-brand-red/10 px-2 py-1 rounded border border-brand-red/20">
             <span className="text-[10px] text-brand-red font-bold uppercase">Work Distribution</span>
@@ -171,7 +187,7 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {categoryData.length > 0 ? categoryData.map((item, idx) => (
+          {performerData.length > 0 ? performerData.map((item, idx) => (
             <motion.div
               key={idx}
               whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.03)' }}
@@ -185,7 +201,9 @@ export default function ChartsSection({ data }: ChartsSectionProps) {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold text-white tracking-tighter">{item.value.toLocaleString()}</span>
-                <span className="text-[9px] text-brand-green font-bold uppercase">Videos</span>
+                <span className="text-[9px] text-brand-green font-bold uppercase">
+                  {isCreative ? 'Items' : 'Videos'}
+                </span>
               </div>
             </motion.div>
           )) : (

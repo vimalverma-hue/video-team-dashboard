@@ -8,18 +8,19 @@ interface StatsGridProps {
   stats: DashboardStats;
 }
 
-export default function StatsGrid({ stats }: StatsGridProps) {
+export default function StatsGrid({ stats, isCreative = false }: StatsGridProps & { isCreative?: boolean }) {
   const cards = [
-    { label: 'Total Videos', value: stats.totalVideos, icon: Video, color: 'text-white' },
+    { label: isCreative ? 'Total Creatives' : 'Total Videos', value: stats.totalVideos, icon: Video, color: 'text-white' },
     { label: 'Completed', value: stats.completedCount, icon: CheckCircle2, color: 'text-[#00ff9f]' },
     { label: 'In Progress', value: stats.workingCount, icon: Layout, color: 'text-[#ffd93b]' },
     { label: 'Rejected', value: stats.rejectedCount, icon: XCircle, color: 'text-[#ff3b3b]' },
     { label: 'On Hold', value: stats.onHoldCount, icon: Pause, color: 'text-blue-400' },
-    { label: 'Channels', value: stats.channelsCount, icon: Tv, color: 'text-purple-400' },
+    { label: isCreative ? 'Designers' : 'Editors', value: stats.editorsCount, icon: Users, color: 'text-brand-green' },
+    { label: isCreative ? 'Modes' : 'Channels', value: stats.channelsCount, icon: Tv, color: 'text-purple-400' },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
       {cards.map((card, index) => (
         <motion.div
           key={card.label}

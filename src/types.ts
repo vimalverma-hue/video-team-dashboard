@@ -5,6 +5,16 @@ export enum VideoStatus {
   HOLD_BY_OWNER = 'Hold by owner',
 }
 
+export interface CreativeEntry {
+  timestamp: string;
+  modeOfSession: string;
+  creativeType: string;
+  mailSubjectLine: string;
+  creativesCount: string;
+  designer: string;
+  status: string;
+}
+
 export interface VideoEntry {
   timestamp: string;
   email: string;
