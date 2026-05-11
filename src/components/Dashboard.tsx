@@ -204,7 +204,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white">Post Production <span className="text-brand-red font-light italic">Analytics</span></h1>
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Video Workflow Dashboard</p>
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Live Data Archive Since Jan 2023</p>
           </div>
         </div>
 
@@ -254,6 +254,18 @@ export default function Dashboard() {
         <div className="flex items-center justify-center -mt-2">
           <div className="bg-[#151515] p-1 rounded-xl border border-white/5 flex gap-1 shadow-2xl">
             <button
+              onClick={() => handleSourceChange('TESTPREP')}
+              className={cn(
+                "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
+                activeSource === 'TESTPREP' 
+                  ? "bg-brand-red text-white shadow-lg shadow-red-900/40" 
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+              )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'TESTPREP' ? "bg-white animate-pulse" : "bg-gray-700")} />
+              TESTPREP
+            </button>
+            <button
               onClick={() => handleSourceChange('NATIONALS')}
               className={cn(
                 "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
@@ -276,18 +288,6 @@ export default function Dashboard() {
             >
               <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'VERNAC' ? "bg-white animate-pulse" : "bg-gray-700")} />
               VERNAC
-            </button>
-            <button
-              onClick={() => handleSourceChange('TESTPREP')}
-              className={cn(
-                "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
-                activeSource === 'TESTPREP' 
-                  ? "bg-brand-red text-white shadow-lg shadow-red-900/40" 
-                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
-              )}
-            >
-              <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'TESTPREP' ? "bg-white animate-pulse" : "bg-gray-700")} />
-              TESTPREP
             </button>
           </div>
         </div>
