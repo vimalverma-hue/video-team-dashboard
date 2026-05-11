@@ -19,8 +19,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [activeSource, setActiveSource] = useState<SheetSource>('NATIONALS');
-  const [activeCreativeSource, setActiveCreativeSource] = useState<SheetSource>('CREATIVE_BRP');
+  const [activeSource, setActiveSource] = useState<SheetSource>('TESTPREP');
+  const [activeCreativeSource, setActiveCreativeSource] = useState<SheetSource>('CREATIVE_TESTPREP');
   const [masterTab, setMasterTab] = useState<'VIDEO_PRODUCTION' | 'CREATIVE_PRODUCTION'>('VIDEO_PRODUCTION');
   
   // Filtering & Search state
@@ -44,6 +44,7 @@ export default function Dashboard() {
     modeOfSession: 'All',
     creativeType: 'All',
     designer: 'All',
+    channel: 'All',
     status: 'All',
     timeRange: 'All',
     startDate: '',
@@ -94,6 +95,7 @@ export default function Dashboard() {
         modeOfSession: 'All',
         creativeType: 'All',
         designer: 'All',
+        channel: 'All',
         status: 'All',
         timeRange: 'All',
         startDate: '',
@@ -114,8 +116,10 @@ export default function Dashboard() {
       const modes = Array.from(new Set(data.map(d => (d as any).modeOfSession?.trim()))).filter(Boolean).sort();
       const types = Array.from(new Set(data.map(d => (d as any).creativeType?.trim()))).filter(Boolean).sort();
       const designers = Array.from(new Set(data.map(d => (d as any).designer?.trim()))).filter(Boolean).sort();
+      const channels = Array.from(new Set(data.map(d => (d as any).channel?.trim()))).filter(Boolean).sort();
+      const verticals = Array.from(new Set(data.map(d => (d as any).vertical?.trim()))).filter(Boolean).sort();
       const statuses = Array.from(new Set(data.map(d => d.status?.trim()))).filter(Boolean).sort();
-      return { modes, types, designers, statuses };
+      return { modes, types, designers, channels, verticals, statuses };
     }
   }, [data, masterTab]);
 
@@ -138,10 +142,11 @@ export default function Dashboard() {
                         (filters.category === 'All' || vEntry.category === filters.category) &&
                         (filters.type === 'All' || vEntry.type === filters.type);
       } else {
-        const cEntry = entry as any;
+        const cEntry = entry as CreativeEntry;
         matchesFields = (creativeFilters.modeOfSession === 'All' || cEntry.modeOfSession === creativeFilters.modeOfSession) &&
                         (creativeFilters.creativeType === 'All' || cEntry.creativeType === creativeFilters.creativeType) &&
                         (creativeFilters.designer === 'All' || cEntry.designer === creativeFilters.designer) &&
+                        (creativeFilters.channel === 'All' || cEntry.channel === creativeFilters.channel) &&
                         (creativeFilters.status === 'All' || cEntry.status === creativeFilters.status);
       }
       
@@ -547,6 +552,17 @@ export default function Dashboard() {
                 </select>
               </div>
               <div className="flex flex-col gap-1">
+                 <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">Channel</label>
+                 <select 
+                  value={creativeFilters.channel}
+                  onChange={(e) => setCreativeFilters(f => ({ ...f, channel: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="All">All Channels</option>
+                  {(uniqueOptions as any).channels?.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
                  <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">Type</label>
                  <select 
                   value={creativeFilters.creativeType}
@@ -566,6 +582,17 @@ export default function Dashboard() {
                 >
                   <option value="All">All Designers</option>
                   {(uniqueOptions as any).designers?.map((d: string) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                 <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">Status</label>
+                 <select 
+                  value={creativeFilters.status}
+                  onChange={(e) => setCreativeFilters(f => ({ ...f, status: e.target.value }))}
+                  className="input-field"
+                >
+                  <option value="All">All Status</option>
+                  {(uniqueOptions as any).statuses?.map((s: string) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -612,7 +639,7 @@ export default function Dashboard() {
               </AnimatePresence>
               <div className="flex items-end pb-0.5 px-2">
                 <button 
-                  onClick={() => setCreativeFilters({ modeOfSession: 'All', creativeType: 'All', designer: 'All', status: 'All', timeRange: 'All', startDate: '', endDate: '' })}
+                  onClick={() => setCreativeFilters({ modeOfSession: 'All', creativeType: 'All', designer: 'All', channel: 'All', status: 'All', timeRange: 'All', startDate: '', endDate: '' })}
                   className="text-[9px] font-black tracking-widest text-brand-red/60 hover:text-brand-red transition-colors uppercase w-full text-right"
                 >
                   RESET FILTERS
@@ -673,7 +700,7 @@ export default function Dashboard() {
                    if (masterTab === 'VIDEO_PRODUCTION') {
                     setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All', startDate: '', endDate: '' });
                    } else {
-                    setCreativeFilters({ modeOfSession: 'All', creativeType: 'All', designer: 'All', status: 'All', timeRange: 'All', startDate: '', endDate: '' });
+                    setCreativeFilters({ modeOfSession: 'All', creativeType: 'All', designer: 'All', channel: 'All', status: 'All', timeRange: 'All', startDate: '', endDate: '' });
                    }
                    setSearchQuery('');
                  }}

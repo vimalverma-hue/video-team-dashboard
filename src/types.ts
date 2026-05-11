@@ -13,6 +13,8 @@ export interface CreativeEntry {
   creativesCount: string;
   designer: string;
   status: string;
+  channel: string;
+  vertical?: string;
 }
 
 export interface VideoEntry {

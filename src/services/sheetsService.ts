@@ -123,6 +123,10 @@ export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise
       const isCreative = source.startsWith('CREATIVE_');
 
       if (isCreative) {
+        let vertical = 'Others';
+        if (source === 'CREATIVE_VERNAC') vertical = 'Vernac';
+        else if (source.startsWith('CREATIVE_')) vertical = source.replace('CREATIVE_', '');
+
         return {
           timestamp: (timestamp || '').toString(),
           modeOfSession: (getVal(['Mode of Session'], 1) || '').toString(),
@@ -131,6 +135,8 @@ export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise
           creativesCount: (getVal(['Creatives count'], 6) || '').toString(),
           designer: (getVal(['Designer'], 4) || '').toString(),
           status: (getVal(['Status'], 7) || 'Pending').toString().trim(),
+          channel: (getVal(['Your Channel', 'Channel'], 2) || '').toString().trim(),
+          vertical: vertical
         };
       }
 
