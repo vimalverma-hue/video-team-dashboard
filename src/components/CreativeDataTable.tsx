@@ -25,7 +25,6 @@ export default function CreativeDataTable({ entries }: CreativeDataTableProps) {
           <tr>
             <th className="px-4 py-3">Timestamp</th>
             <th className="px-4 py-3">Mode</th>
-            <th className="px-4 py-3">Vertical</th>
             <th className="px-4 py-3">Type</th>
             <th className="px-4 py-3">Subject</th>
             <th className="px-4 py-3">Count</th>
@@ -51,9 +50,6 @@ export default function CreativeDataTable({ entries }: CreativeDataTableProps) {
               </td>
               <td className="px-4 py-3">
                 <span className="text-white font-semibold">{entry.modeOfSession}</span>
-              </td>
-              <td className="px-4 py-3">
-                <span className="text-brand-red font-bold uppercase text-[10px] tracking-tight">{entry.vertical}</span>
               </td>
               <td className="px-4 py-3">
                 <span className="px-1.5 py-0.5 rounded bg-white/5 text-gray-500 text-[9px] uppercase font-bold border border-white/5">

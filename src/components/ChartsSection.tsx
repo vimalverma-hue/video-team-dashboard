@@ -16,7 +16,7 @@ export default function ChartsSection({ data, isCreative = false }: ChartsSectio
   const pieData = useMemo(() => {
     const counts = data.reduce((acc, curr) => {
       const field = isCreative 
-        ? (curr.vertical || 'Unknown') 
+        ? (curr.modeOfSession || 'Unknown') 
         : (curr.channel || 'Unknown');
       const label = field.trim() || 'Unknown';
       const count = isCreative ? (parseInt(curr.creativesCount, 10) || 0) : 1;
@@ -130,7 +130,7 @@ export default function ChartsSection({ data, isCreative = false }: ChartsSectio
         className="bg-[#151515]/60 backdrop-blur-lg border border-white/5 p-4 rounded-2xl shadow-xl"
       >
         <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">
-          {isCreative ? 'Verticals' : 'Channel'} Distribution
+          {isCreative ? 'Creative Mode' : 'Channel'} Distribution
         </h3>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
