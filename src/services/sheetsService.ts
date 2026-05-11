@@ -12,13 +12,23 @@ const SHEETS_CONFIG = {
   }
 };
 
-export type SheetSource = 'NATIONALS' | 'VERNAC';
+export type SheetSource = 'NATIONALS' | 'VERNAC' | 'TESTPREP';
 
 /**
  * Fetches data from Google Sheets using the CSV export URL.
  * CSV export is generally faster and ignores spreadsheet-level UI filters/hidden rows.
  */
 export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise<VideoEntry[]> {
+  if (source === 'TESTPREP') {
+    const [nationals, vernac] = await Promise.all([
+      fetchSheetData('NATIONALS'),
+      fetchSheetData('VERNAC')
+    ]);
+    return [...nationals, ...vernac].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }
+
   try {
     const config = SHEETS_CONFIG[source];
     // Reverting to /export?format=csv which is the most reliable way to get ALL data (ignoring UI filters/hidden rows)

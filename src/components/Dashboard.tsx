@@ -32,7 +32,9 @@ export default function Dashboard() {
     status: 'All',
     category: 'All',
     type: 'All',
-    timeRange: 'All' // All, Today, Tomorrow, Custom
+    timeRange: 'All', // All, Today, Yesterday, Custom
+    startDate: '', // for Custom range
+    endDate: ''   // for Custom range
   });
 
   const loadData = async (source: SheetSource = activeSource) => {
@@ -68,7 +70,9 @@ export default function Dashboard() {
         status: 'All',
         category: 'All',
         type: 'All',
-        timeRange: 'All'
+        timeRange: 'All',
+        startDate: '',
+        endDate: ''
       });
     }
   };
@@ -107,6 +111,18 @@ export default function Dashboard() {
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
         matchesTime = entry.timestamp.toString().includes(yesterdayStr);
+      } else if (filters.timeRange === 'Custom' && filters.startDate && filters.endDate) {
+        try {
+          const entryDate = new Date(entry.timestamp);
+          const start = new Date(filters.startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(filters.endDate);
+          end.setHours(23, 59, 59, 999);
+          
+          matchesTime = entryDate >= start && entryDate <= end;
+        } catch (e) {
+          matchesTime = true;
+        }
       }
 
       return matchesSearch && matchesEditor && matchesChannel && matchesStatus && matchesCategory && matchesType && matchesTime;
@@ -261,6 +277,18 @@ export default function Dashboard() {
               <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'VERNAC' ? "bg-white animate-pulse" : "bg-gray-700")} />
               VERNAC
             </button>
+            <button
+              onClick={() => handleSourceChange('TESTPREP')}
+              className={cn(
+                "px-8 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 tracking-widest flex items-center gap-2",
+                activeSource === 'TESTPREP' 
+                  ? "bg-brand-red text-white shadow-lg shadow-red-900/40" 
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+              )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full", activeSource === 'TESTPREP' ? "bg-white animate-pulse" : "bg-gray-700")} />
+              TESTPREP
+            </button>
           </div>
         </div>
 
@@ -334,12 +362,43 @@ export default function Dashboard() {
               <option value="All">All Time</option>
               <option value="Today">Today</option>
               <option value="Yesterday">Yesterday</option>
+              <option value="Custom">Custom Range</option>
             </select>
           </div>
 
+          <AnimatePresence>
+            {filters.timeRange === 'Custom' && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="col-span-2 grid grid-cols-2 gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">From</label>
+                  <input 
+                    type="date" 
+                    value={filters.startDate}
+                    onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value }))}
+                    className="input-field [color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] uppercase text-gray-500 ml-1 font-bold">To</label>
+                  <input 
+                    type="date" 
+                    value={filters.endDate}
+                    onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value }))}
+                    className="input-field [color-scheme:dark]"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex items-end pb-0.5 px-2">
             <button 
-              onClick={() => setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All' })}
+              onClick={() => setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All', startDate: '', endDate: '' })}
               className="text-[9px] font-black tracking-widest text-brand-red/60 hover:text-brand-red transition-colors uppercase w-full text-right"
             >
               RESET FILTERS
@@ -395,7 +454,7 @@ export default function Dashboard() {
                <p className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Try adjusting your search or filters</p>
                <button 
                  onClick={() => {
-                   setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All' });
+                   setFilters({ editor: 'All', channel: 'All', status: 'All', category: 'All', type: 'All', timeRange: 'All', startDate: '', endDate: '' });
                    setSearchQuery('');
                  }}
                  className="mt-6 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-brand-red text-[10px] font-black uppercase transition-all tracking-widest"
