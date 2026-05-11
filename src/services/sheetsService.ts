@@ -134,7 +134,7 @@ export async function fetchSheetData(source: SheetSource = 'NATIONALS'): Promise
           mailSubjectLine: (getVal(['Mail Subject Line'], 3) || '').toString(),
           creativesCount: (getVal(['Creatives count'], 6) || '').toString(),
           designer: (getVal(['Designer'], 4) || '').toString(),
-          status: (getVal(['Status'], 7) || 'Pending').toString().trim(),
+          status: (getVal(['Status'], 8) || 'Pending').toString().trim(),
           channel: (getVal(['Your Channel', 'Channel'], 2) || '').toString().trim(),
           vertical: vertical
         };

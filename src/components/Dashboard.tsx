@@ -188,15 +188,20 @@ export default function Dashboard() {
     let rejected = 0;
     let hold = 0;
 
+    const isCreative = masterTab === 'CREATIVE_PRODUCTION';
+
     for (let i = 0; i < filteredData.length; i++) {
-       const s = filteredData[i].status?.toLowerCase() || '';
-       if (s.includes('completed') || s.includes('done')) completed++;
-       else if (s.includes('working') || s.includes('progress')) working++;
-       else if (s.includes('rejected') || s.includes('failed')) rejected++;
-       else if (s.includes('hold')) hold++;
+       const entry = filteredData[i];
+       const s = entry.status?.toLowerCase() || '';
+       const count = isCreative ? (parseInt((entry as CreativeEntry).creativesCount || '0', 10) || 0) : 1;
+       
+       if (s.includes('completed') || s.includes('done')) completed += count;
+       else if (s.includes('working') || s.includes('progress')) working += count;
+       else if (s.includes('rejected') || s.includes('failed')) rejected += count;
+       else if (s.includes('hold')) hold += count;
     }
 
-    if (masterTab === 'VIDEO_PRODUCTION') {
+    if (!isCreative) {
       const vData = filteredData as VideoEntry[];
       return {
         totalVideos: filteredData.length,
